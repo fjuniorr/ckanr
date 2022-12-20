@@ -17,6 +17,35 @@ jobs:
         - { os: macOS-latest, r: 'release'}
         - { os: ubuntu-latest,  r: 'release'}
 
+    services:
+      ckan:
+        image: openknowledge/ckan-dev:2.8
+        env:
+          CKAN_SQLALCHEMY_URL: postgresql://ckan_default:pass@postgres/ckan_test
+          CKAN_DATASTORE_WRITE_URL: postgresql://datastore_write:pass@postgres/datastore_test
+          CKAN_DATASTORE_READ_URL: postgresql://datastore_read:pass@postgres/datastore_test
+          CKAN_SOLR_URL: http://solr:8983/solr/ckan
+          CKAN_REDIS_URL: redis://redis:6379/1
+          CKAN_DATAPUSHER_URL: http://datapusher:8800
+          CKAN__DATAPUSHER__CALLBACK_URL_BASE: http://ckan:5000
+          TZ: UTC
+          CKAN_SYSADMIN_NAME: ckan_admin
+          CKAN_SYSADMIN_PASSWORD: test1234
+          CKAN_SYSADMIN_EMAIL: mail@example.com
+        ports:
+          - "5000:5000"
+      solr:
+        image: ckan/ckan-solr:2.8
+      postgres:
+        image: ckan/ckan-postgres-dev:2.8
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+          image: redis:3
+
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -35,7 +64,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
+      - name: LOG BEFORE CKAN CHECK...
+        run: docker logs "${{ job.services.ckan.id }}"
+      - name: Check if CKAN is up
+        run: |
+          curl --retry 5 --retry-delay 1  http://localhost:5000/api/3/action/status_show
+      - name: Generate CKAN API token
+        run: |
+          echo "TEST_API_KEY=$(docker exec "${{ job.services.ckan.id }}" ckan user token add ckan_admin dev_token | sed 's/API Token created://' | tr -d '\n\t')" >> $GITHUB_ENV
+        if: matrix.ckan-version == '2.9'
+      - name: Generate CKAN API key
+        run: |
+          echo "TEST_API_KEY"=$(docker exec "${{ job.services.ckan.id }}" paster --plugin=ckan user ckan_admin | grep -o -P '(?<=apikey=).*(?= created)') >> $GITHUB_ENV
+        if: matrix.ckan-version != '2.9'
+      - name: Get value of TEST_API_KEY
+        run: |
+          curl -H "Authorization: ${{ env.TEST_API_KEY }}" http://localhost:5000/api/3/action/user_show?id=ckan_admin
+      - name: LOG AFTER CKAN CHECK...
+        run: docker logs "${{ job.services.ckan.id }}"
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
