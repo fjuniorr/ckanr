@@ -19,17 +19,17 @@ jobs:
       - name: Start containers
         run: docker compose -f docker-compose.yml up -d --build
       - name: LOG BEFORE CKAN CHECK...
-        run: docker logs docker-ckan-1
+        run: docker logs ckanr-ckan-1
       - name: Check if CKAN is up
         run: |
           curl --retry 5 --retry-delay 1  http://localhost:5000/api/3/action/status_show
       - name: Generate CKAN API token
         run: |
-          echo "TEST_API_KEY=$(docker exec docker-ckan-1 ckan user token add ckan_admin dev_token | sed 's/API Token created://' | tr -d '\n\t')" >> $GITHUB_ENV
+          echo "TEST_API_KEY=$(docker exec ckanr-ckan-1 ckan user token add ckan_admin dev_token | sed 's/API Token created://' | tr -d '\n\t')" >> $GITHUB_ENV
         if: matrix.ckan-version == '2.9'
       - name: Generate CKAN API key
         run: |
-          echo "TEST_API_KEY"=$(docker exec docker-ckan-1 paster --plugin=ckan user ckan_admin | grep -o -P '(?<=apikey=).*(?= created)') >> $GITHUB_ENV
+          echo "TEST_API_KEY"=$(docker exec ckanr-ckan-1 paster --plugin=ckan user ckan_admin | grep -o -P '(?<=apikey=).*(?= created)') >> $GITHUB_ENV
         if: matrix.ckan-version != '2.9'
       - name: Get value of TEST_API_KEY
         run: |
@@ -81,4 +81,4 @@ jobs:
           path: ${{ runner.temp }}/package
 
       - name: LOG AFTER CKAN CHECK...
-        run: docker logs docker-ckan-1
+        run: docker logs ckanr-ckan-1
