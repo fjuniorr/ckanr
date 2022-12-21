@@ -6,14 +6,14 @@ jobs:
   R-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }}) - CKAN ${{ matrix.ckan-version }}
 
     strategy:
       fail-fast: false
       matrix:
+        ckan-version: [2.9, 2.8, 2.7]
         config:
         - { os: ubuntu-latest,  r: 'release'}
-        - ckan-version: [2.9, 2.8, 2.7]
 
     steps:
       - uses: actions/checkout@v3
