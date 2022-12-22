@@ -14,6 +14,7 @@ jobs:
         ckan-version: [2.9, 2.8, 2.7]
         config:
         - { os: ubuntu-latest,  r: 'release'}
+        - { os: windows-latest, r: 'release'}
 
     steps:
       - uses: actions/checkout@v3
