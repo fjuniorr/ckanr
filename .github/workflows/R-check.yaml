@@ -45,11 +45,11 @@ jobs:
       - name: Generate CKAN API token
         run: |
           echo "TEST_API_KEY=$(docker exec ckan ckan user token add ckan_admin dev_token | sed 's/API Token created://' | tr -d '\n\t')" >> $GITHUB_ENV
-        if: matrix.ckan-version == '2.9' and matrix.config.os == 'ubuntu-latest'
+        if: matrix.ckan-version == '2.9' && matrix.config.os == 'ubuntu-latest'
       - name: Generate CKAN API key
         run: |
           echo "TEST_API_KEY"=$(docker exec ckan paster --plugin=ckan user ckan_admin | grep -o -P '(?<=apikey=).*(?= created)') >> $GITHUB_ENV
-        if: matrix.ckan-version != '2.9' and matrix.config.os == 'ubuntu-latest'
+        if: matrix.ckan-version != '2.9' && matrix.config.os == 'ubuntu-latest'
       - name: Check
         env:
           _R_CHECK_CRAN_INCOMING_: false
